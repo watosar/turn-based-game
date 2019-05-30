@@ -98,6 +98,9 @@ class MemberTurnManager:
 
     def get_player(self, member):
         return next(p for p, m in self.members.items() if m == member)
+    
+    def get_member(self, player):
+        return self.members[current_player]
 
     def play(self, member, action):
         print('play')

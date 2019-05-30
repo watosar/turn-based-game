@@ -1,9 +1,12 @@
 from turn_based_game import GameManager, TurnBasedGame
 from random import shuffle
+import discord
 from discord.ext import commands
+
 
 def sum_vec2(a, b):
     return tuple(a[i]+b[i] for i in range(2))
+
 
 def comvert_code_to_cood(code):
     if len(code)!=2:
@@ -15,6 +18,7 @@ def comvert_code_to_cood(code):
         if i.isalpha():
             x = int(i, 18) - 10
     return (x, y)
+
 
 class Reversi(TurnBasedGame):
     max_number_of_players = 2
@@ -102,23 +106,57 @@ class ReversiGameManager(GameManager):
             winner = self.game.players[1]
             
         if winner:
-            return 'winner is {winner}; {check} : {64-check}'
+            winner = self.member_turn_manager.get_member(winner)
+            return 'winner is <@{winner}>; {check} : {64-check}'
         else:
             return 'draw'
 
     def format_game_board(self):
         board = str(self.game)
         disc = self.game.current_player.disc
-        suggest = f'--next turn info--\nmember: {self.get_current_turn_member()}, disc: {disc}\n------------------'
-        return f'{board}\n{suggest}'
+        suggest = f'--next turn info--\nmember: <@{self.get_current_turn_member()}>, disc: {disc}\n------------------'
+        return f'```{board}```\n{suggest}'
 
     def play(self, member, action):
         self.member_turn_manager.play(member, action)
         return self.format_game_board()
 
 
-class ReversiCog(commands.Cog):
+class Cog(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        
     @commands.command()
-    async def reversi(self, ctx):
-        ...
+    async def reversi(self, ctx, member1:discord.Member =None, member2:discord.Member =None):
+        if ctx.channel.id in self.bot.games:
+            await ctx.channel.send('already a game exists in this channel')
+            return
+        game = ReversiGamanager()
+        self.bot.games[ctx.channel.id] = game
+        
+        if member1:
+            game.register_member(member1.id)
+        if member2:
+            game.register_member(member2.id)
+            game.init_game()
+        
+    @commands.command()
+    async def register(self, ctx, member1:discord.Member, member2:discord.Member =None):
+        game = self.bot.games.get(message.channel.id)
+        if not game or game.is_open:
+            return 
+        game.register_member(member1)
+        if member2:
+            game.register_member(member2)
+        
+        if len(game.members)==2:
+            game.init_game()
+        
+    @commands.Cog.add_listener()
+    async def on_message(self, message):
+        game = self.bot.games.get(message.channel.id)
+        if not game or not game.is_open:
+            return 
+        result = game.play(message.author.id, message.content)
+        await message.channel.send(result)
 
