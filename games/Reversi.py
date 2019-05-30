@@ -1,5 +1,6 @@
 from turn_based_game import GameManager, TurnBasedGame
 from random import shuffle
+from discord.ext import commands
 
 def sum_vec2(a, b):
     return tuple(a[i]+b[i] for i in range(2))
@@ -69,7 +70,9 @@ class Reversi(TurnBasedGame):
             if getattr(pl, 'disc', None):
                 continue
             pl.disc = ('🔴', '⚪️')[i]
-
+    def _close(self):
+        self.is_end = True
+        
     def play(self, action):
         super().play()
         coord = comvert_code_to_cood(action)
@@ -77,7 +80,7 @@ class Reversi(TurnBasedGame):
         if not res:
             raise ValueError('uncorrect coord')
         if len(self.board) == 64:
-            self.is_end = True
+            self._close()
         next(self.turn)
 
 
@@ -91,7 +94,17 @@ class ReversiGameManager(GameManager):
     def get_result(self):
         if not self.game.is_end:
             return 
-        ...
+        check = tuple(self.game.board.values()).count(0)
+        winner = None
+        if check > 32:
+            winner = self.game.players[0]
+        elif check < 33:
+            winner = self.game.players[1]
+            
+        if winner:
+            return 'winner is {winner}; {check} : {64-check}'
+        else:
+            return 'draw'
 
     def format_game_board(self):
         board = str(self.game)
@@ -102,4 +115,10 @@ class ReversiGameManager(GameManager):
     def play(self, member, action):
         self.member_turn_manager.play(member, action)
         return self.format_game_board()
+
+
+class ReversiCog(commands.Cog):
+    @commands.command()
+    async def reversi(self, ctx):
+        ...
 
