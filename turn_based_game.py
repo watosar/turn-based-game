@@ -50,7 +50,7 @@ class TurnBasedGame:
         self.turn = Turn(len(self.players))
         self.is_open = True
 
-    def play(self, action):
+    def play(self, action=None):
         if self.is_end:
             raise ValueError('already ended')
         if not self.is_open:
@@ -121,5 +121,6 @@ class GameManager:
     def get_player(self, member):
         return self.member_turn_manager.get_player(member)
 
-    def play(self, ):
+    def play(self, member, action):
+        ...
 
