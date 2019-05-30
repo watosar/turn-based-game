@@ -29,7 +29,7 @@ class Reversi(TurnBasedGame):
         self.board = {}
         
     def __str__(self):
-        return '⏺​🇦​🇧​🇨​🇩​🇪​🇫​🇬​🇭\n'+ \
+        return '⏺​`🇦​🇧​🇨​🇩​🇪​🇫​🇬​🇭`\n'+ \
         '\n'.join(
             chr(49+y)+chr(0xfe0f)+chr(0x20e3)+''.join(
                 self.players[state].disc if state!=-1 else '▪️'
@@ -74,6 +74,7 @@ class Reversi(TurnBasedGame):
             if getattr(pl, 'disc', None):
                 continue
             pl.disc = ('🔴', '⚪️')[i]
+    
     def _close(self):
         self.is_end = True
         
@@ -114,8 +115,11 @@ class ReversiGameManager(GameManager):
     def format_game_board(self):
         board = str(self.game)
         disc = self.game.current_player.disc
-        suggest = f'--next turn info--\nmember: <@{self.get_current_turn_member()}>, disc: {disc}\n------------------'
-        return f'```{board}```\n{suggest}'
+        if not self.game.is_end:
+            suggest = f'--next turn info--\nmember: <@{self.get_current_turn_member()}>, disc: {disc}\n------------------'
+        else:
+            suggest = f'--this game is end--\n{self.get_result()}\n--------------------'
+        return f'{board}\n{suggest}'
 
     def play(self, member, action):
         self.member_turn_manager.play(member, action)
