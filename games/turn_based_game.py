@@ -114,6 +114,14 @@ class GameManager:
     def __init__(self, game):
         self.game = game
         self.member_turn_manager = MemberTurnManager(self.game)
+    
+    @property
+    def members(self):
+        return self.member_turn_manager.members
+        
+    @property
+    def max_number_of_players(self):
+        return self.game.max_number_of_players
 
     def register_member(self, *args, **kwargs):
         self.member_turn_manager.register_member(*args, **kwargs)

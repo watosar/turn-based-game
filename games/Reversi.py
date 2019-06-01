@@ -1,4 +1,4 @@
-from turn_based_game import GameManager, TurnBasedGame
+from .turn_based_game import GameManager, TurnBasedGame
 from random import shuffle
 import discord
 from discord.ext import commands
@@ -131,32 +131,10 @@ class Cog(commands.Cog):
         self.bot = bot
         
     @commands.command()
-    async def reversi(self, ctx, member1:discord.Member =None, member2:discord.Member =None):
-        if ctx.channel.id in self.bot.games:
-            await ctx.channel.send('already a game exists in this channel')
-            return
-        game = ReversiGamanager()
-        self.bot.games[ctx.channel.id] = game
-        
-        if member1:
-            game.register_member(member1.id)
-        if member2:
-            game.register_member(member2.id)
-            game.init_game()
-        
-    @commands.command()
-    async def register(self, ctx, member1:discord.Member, member2:discord.Member =None):
-        game = self.bot.games.get(message.channel.id)
-        if not game or game.is_open:
-            return 
-        game.register_member(member1)
-        if member2:
-            game.register_member(member2)
-        
-        if len(game.members)==2:
-            game.init_game()
-        
-    @commands.Cog.add_listener()
+    async def reversi(self, ctx, members: commands.Greedy[discord.Member]):
+        await self.bot._init_game(ReversiGamanager, members)
+            
+    @commands.Cog.listener()
     async def on_message(self, message):
         game = self.bot.games.get(message.channel.id)
         if not game or not game.is_open:
