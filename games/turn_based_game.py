@@ -18,6 +18,9 @@ class Turn:
 
     def __next__(self):
         self._turn_count += 1
+        
+    def turn_end(self):
+        self._turn_count += 1
 
 
 class Player:
@@ -79,4 +82,7 @@ class GameManager:
         if member != current_turn_player:
             raise ValueError(f'current turn player is {current_turn_player} not {player}')
         return self.game.play(self._turn_manager, action)
+        
+    def end(self):
+        return self.game.end(self._turn_manager)
 

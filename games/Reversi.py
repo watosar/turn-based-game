@@ -1,5 +1,3 @@
-from .turn_based_game import GameManager, TurnBasedGame
-from random import shuffle
 import discord
 from discord.ext import commands
 
@@ -20,12 +18,11 @@ def comvert_code_to_cood(code):
     return (x, y)
 
 
-class Reversi(TurnBasedGame):
+class Reversi:
     max_number_of_players = 2
     min_number_of_players = 2
 
     def __init__(self):
-        super().__init__()
         self.board = {}
         
     def __str__(self):
@@ -61,16 +58,15 @@ class Reversi(TurnBasedGame):
             self.board[coord] = self.turn.current_turn
         return res
 
-    def init_game(self):
-        super().init_game()
+    def start(self, turn_manager):
         self.board = (
             {
                 (3, 3): 1, (4, 3): 0,
                 (3, 4): 0, (4, 4): 1,
             }
         )
-        shuffle(self.players)
-        for i, pl in enumerate(self.players):
+        turn_manager.shuffe()
+        for i, pl in enumerate(turn_manager.players):
             if getattr(pl, 'disc', None):
                 continue
             pl.disc = ('🔴', '⚪️')[i]
@@ -78,28 +74,20 @@ class Reversi(TurnBasedGame):
     def _close(self):
         self.is_end = True
         
-    def play(self, action):
-        super().play()
+    def play(self, turn_manager, action):
         coord = comvert_code_to_cood(action)
         res = self._do_reversi(coord)
         if not res:
             raise ValueError('uncorrect coord')
         if len(self.board) == 64:
             self._close()
-        next(self.turn)
+        turn_manager.turn.turn_end()
+        return self.format_game_board(turn_manager)
 
-
-class ReversiGameManager(GameManager):
-    def __init__(self):
-        super().__init__(Reversi())
-
-    def init_game(self):
-        self.game.init_game()
-    
     def get_result(self):
-        if not self.game.is_end:
+        if not self.is_end:
             return 
-        check = tuple(self.game.board.values()).count(0)
+        check = tuple(self.board.values()).count(0)
         winner = None
         if check > 32:
             winner = self.game.players[0]
@@ -112,18 +100,14 @@ class ReversiGameManager(GameManager):
         else:
             return 'draw'
 
-    def format_game_board(self):
-        board = str(self.game)
-        disc = self.game.current_player.disc
-        if not self.game.is_end:
-            suggest = f'--next turn info--\nmember: <@{self.get_current_turn_member()}>, disc: {disc}\n------------------'
+    def format_game_board(self, turn_manager):
+        board = str(self)
+        disc = self.current_player.disc
+        if not self.is_end:
+            suggest = f'--next turn info--\nmember: <@{turn_manager.get_current_player().member}>, disc: {disc}\n------------------'
         else:
             suggest = f'--this game is end--\n{self.get_result()}\n--------------------'
         return f'{board}\n{suggest}'
-
-    def play(self, member, action):
-        self.member_turn_manager.play(member, action)
-        return self.format_game_board()
 
 
 class Cog(commands.Cog):
@@ -132,13 +116,5 @@ class Cog(commands.Cog):
         
     @commands.command()
     async def reversi(self, ctx, members: commands.Greedy[discord.Member]):
-        await self.bot._init_game(ReversiGamanager, members)
-            
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        game = self.bot.games.get(message.channel.id)
-        if not game or not game.is_open or message.author.id not in game.members.values():
-            return 
-        result = game.play(message.author.id, message.content)
-        await message.channel.send(result)
+        await self.bot._init_game(Reversi(), members)
 

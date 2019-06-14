@@ -3,7 +3,7 @@ import logging
 import os
 import discord
 from discord.ext import commands
-from games import Reversi, Quarto
+from games import GameManager, Reversi, Quarto
 
 logging.basicConfig(level=logging.INFO)
 asyncio.set_event_loop(asyncio.new_event_loop())
@@ -20,22 +20,22 @@ async def on_ready():
     
 
 @bot.event
-async def _init_game(ctx, game_class, members):
+async def _init_game(ctx, game, members):
     if ctx.channel.id in bot.games:
         await ctx.channel.send('already a game exists in this channel')
         return
-        
-    game = game_class()
-    self.bot.games[ctx.channel.id] = game_class()
+    
+    game_manager = GameManager(gamr)
+    self.bot.games[ctx.channel.id] = game_manager
     
     for m in members:
         try:
-            game.register_member(m.id)
+            game_manager.register_player(m.id)
         except ValueError as e:
             await ctx.channel.send(e)
             break
         
-    if len(game.members) == game.max_number_of_players:
+    if len(game_manager.players) == game_manager.game.max_number_of_players:
         game.init_game()
         await ctx.channel.send(f'game started\nplayers: {", ".join(f"<@{i}>" for i in game.members.values())}')
     else:
@@ -79,6 +79,15 @@ async def register(ctx, members: commands.Greedy[discord.Member]):
             break
     # if players is max → game start
     # else wait
+        
+@commands.Cog.listener()
+async def on_message(self, message):
+    game = self.bot.games.get(message.channel.id)
+    if not game or not game.is_open or message.author.id not in game.members.values():
+        return 
+    result = game.play(message.author.id, message.content)
+    await message.channel.send(result)
+        
         
         
 bot.add_cog(Reversi.Cog(bot))
