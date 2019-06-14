@@ -16,6 +16,7 @@ bot.games = dict()
 @bot.event
 async def on_ready():
     print('logged on as', bot.user)
+    print(bot.guilds)
     
 
 @bot.event
@@ -36,6 +37,7 @@ async def _init_game(ctx, game_class, members):
         
     if len(game.members) == game.max_number_of_players:
         game.init_game()
+        await ctx.channel.send(f'game started\nplayers: {", ".join(f"<@{i}>" for i in game.members.values())}')
     else:
         await ctx.channel.send('waiting for more player registered')
     
@@ -44,17 +46,22 @@ async def _init_game(ctx, game_class, members):
 async def start(ctx):
     game = bot.games.get(ctx.channel.id, None)
     if not game:
-        ...
-        return 
-    
-    game.init_game()
-    
+        await ctx.channel.send('no game is here') 
+    elif game.is_open:
+        await ctx.channel.send('game already started')
+    else:
+        try:
+            game.init_game()
+            await ctx.channel.send(f'game started\nplayers: {", ".join(f"<@{i}>" for i in game.members.values())}')
+        except ValueError as e:
+            await ctx.channel.send(e)
+        
     
 @bot.command()
 async def end(ctx):
     game = bot.games.pop(ctx.channel.id, None)
     if not game:
-        ...
+        await ctx.channel.send('no game is here')
         return 
     await ctx.channel.send('ended game')
     
@@ -77,5 +84,5 @@ async def register(ctx, members: commands.Greedy[discord.Member]):
 bot.add_cog(Reversi.Cog(bot))
 bot.add_cog(Quarto.Cog(bot))
 
-#bot.run(os.environ['token'])
+bot.run(os.environ['token'])
 

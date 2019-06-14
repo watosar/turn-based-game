@@ -1,137 +1,82 @@
-"""
-abc turn based game
-"""
+import random
 
 
 class Turn:
     def __init__(self, size=1):
         if size < 1:
-            raise ValueError('size must be natural number, not', size)
+            raise ValueError(f'size must be positive integer, not {size}')
         self._turn_count = 0
-        self.circle_size = size
+        self.loop_size = size
+    
+    def update_loop_size(self, size: int):
+        if not isinstance(size, int):
+            raise TypeError(f'size must be int not {type(size)}')
+        self.loop_size = size
 
-    @property
-    def current_turn(self):
-        return self._turn_count % self.circle_size
+    def current(self):
+        return self._turn_count % self.loop_size
 
     def __next__(self):
         self._turn_count += 1
 
 
-class TurnBasedGame:
-    class Player:
-        pass
+class Player:
+    def __init__(self, member):
+        self.member = member
 
-    max_number_of_players = None
-    min_number_of_players = None
-
-    def __init__(self):
-        if not isinstance(self.max_number_of_players, int) or not isinstance(self.min_number_of_players, int):
-            raise NotImplementedError("needs to set int to {max_number_of_players} and {min_number_of_players} ")
-        self.is_open = False
-        self.is_end = False
-        self.turn = None
-        self.players = []
-
-    def create_player(self) -> Player:
-        if not len(self.players) < self.max_number_of_players:
-            raise ValueError(f"max number of players is {self.max_number_of_players}")
-        player = self.Player()
-        self.players.append(player)
-        return player
-
-    @property
-    def current_player(self) -> Player:
-        return self.players[self.turn.current_turn]
-
-    def init_game(self):
-        if len(self.players) < self.min_number_of_players:
-            raise ValueError(f"need at least of {self.min_number_of_players} players")
-        self.turn = Turn(len(self.players))
-        self.is_open = True
-
-    def play(self, action=None):
-        if self.is_end:
-            raise ValueError('already ended')
-        if not self.is_open:
-            raise ValueError('game is not initialized')
-
-        # some actions
-        # next(self.turn)
-
-    def __str__(self):
-        return ''  # 最小限のstr
-
-
-class Member:
-    def __init__(self, **data):
-        self.__dict__.update(data)
+    def __setattr__(self, key, value):
+        if key == 'member':
+            raise TypeError()
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return other == self.member
 
 
-class MemberTurnManager:
-    """
-    Member Manager
-    """
+class TurnManager:
+    def __init__(self):
+        self.turn = Turn()
+        self.players = []
+        self.is_started = False
 
-    def __init__(self, game):
-        self.members = dict()
-        self.game = game
-
-    def register_member(self, member=None, **kwargs):
-        if self.game.is_open:
-            raise ValueError("game is already opened")
-
-        player = self.game.create_player()
-        if member is None:
-            member = Member(**kwargs)
-        self.members[player] = member
-
-    @property
-    def current_turn_member(self):
-        return self.members[self.game.current_player]
-
-    def _current_turn_member_is(self, member) -> bool:
-        return member == self.current_turn_member
-
-    def get_player(self, member):
-        return next(p for p, m in self.members.items() if m == member)
+    def start(self):
+        self.turn.update_loop_size(len(self.players))
+        self.is_started = True
     
-    def get_member(self, player):
-        return self.members[current_player]
+    def register_player(self, member):
+        player = Player(member)
+        self.players.append(player)
 
-    def play(self, member, action):
-        print('play')
-        if not self._current_turn_member_is(member):
-            raise ValueError(f"current turn player is {self.current_turn_member} not {member}")
-        print('send action')
-        return self.game.play(action)
+    def shuffle(self):
+        random.shuffle(self.players)
+
+    def get_current_turn_player(self):
+        return self.players[self.turn.current()]
 
 
 class GameManager:
-    def __init__(self, game):
+    def __init__(self, game, *, turn_manager=None):
+        self._turn_manager = turn_manager or TurnManager()
         self.game = game
-        self.member_turn_manager = MemberTurnManager(self.game)
-    
-    @property
-    def members(self):
-        return self.member_turn_manager.members
-        
-    @property
-    def max_number_of_players(self):
-        return self.game.max_number_of_players
 
-    def register_member(self, *args, **kwargs):
-        self.member_turn_manager.register_member(*args, **kwargs)
+    def register_player(self, member):
+        if self.game.max_number_of_players < len(self._turn_manager.avatar_list):
+            raise ValueError('this game game {self.game} already have max players')
+        self._turn_manager.register_player(member)
 
-    def get_current_turn_member(self):
-        return self.member_turn_manager.current_turn_member
-
-    def get_player(self, member):
-        return self.member_turn_manager.get_player(member)
+    def start(self):
+        if self._turn_manager.is_started:
+            raise TypeError('game is already started')
+        diff = self.game.min_number_of_players > len(self._turn_manager.avatar_list)
+        if diff:
+            raise ValueError(f'need more {diff} players')
+        self._turn_manager.start()
+        self.game.start(self._turn_manager)
 
     def play(self, member, action):
-        ...
+        if not self._turn_manager.is_started:
+            raise ValueError('game is not started')
+        current_turn_player = self._turn_manager.get_current_turn_player()
+        if member != current_turn_player:
+            raise ValueError(f'current turn player is {current_turn_player} not {player}')
+        return self.game.play(self._turn_manager, action)
 

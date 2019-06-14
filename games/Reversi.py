@@ -137,7 +137,7 @@ class Cog(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         game = self.bot.games.get(message.channel.id)
-        if not game or not game.is_open:
+        if not game or not game.is_open or message.author.id not in game.members.values():
             return 
         result = game.play(message.author.id, message.content)
         await message.channel.send(result)

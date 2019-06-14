@@ -24,7 +24,7 @@ _internal_str_board = '''\
 '''
 
 translate_table = {0: 0, 1: 1, 2: 4, 3: 2, 4: 5, 5: 8, 6: 3, 7: 6, 8: 9, 9: 12, 10: 7, 11: 10, 12: 13, 13: 11, 14: 14, 15: 15}
-piece_table = ('<:00:583671042111963139>', '<:01:583671101771481098>', '<:02:583671169744502784>', '<:03:583671241026830354>', '<:04:583671308223774730>', '<:05:583671353505480714>', '<:06:583671439589244952>', '<:07:583671483965112338>', '<:08:583671600495198215>', '<:09:583671648733888556>', '<:10:583671760201842708>', '<:11:583671797111717888>', '<:12:583671855815196704>', '<:13:583672315410382860>', '<:14:583672360905867265>', '<:15:583672398092697621>')
+piece_table = ('<:00:583671042111963139>', '<:01:583671101771481098>', '<:02:583671169744502784>', '<:03:583671241026830354>', '<:04:583671308223774730>', '<:05:583671353505480714>', '<:06:583671439589244952>', '<:07:583671483965112338>', '<:08:583671600495198215>', '<:09:583671648733888556>', '<:10:583671760201842708>', '<:  11:583671797111717888>', '<:12:583671855815196704>', '<:13:583672315410382860>', '<:14:583672360905867265>', '<:15:583672398092697621>')
 
 #piece_table = [f':{i:02}:' for i in range(16)]
 
@@ -61,11 +61,10 @@ class Quarto(TurnBasedGame):
         shuffle(self.players)
         
     def _check_quarto(self):
-        for r, c, x in ((1,4,3),(4,1,5)):
+        for r, c in ((1,4),(4,1)):
             for i in range(4):
                 piece = self.board[i]
-                if piece is None:
-                    continue
+                if piece is None: continue
                 f_check = t_check = piece
                 for a in range(4):
                     piece = self.board[i*r+a*c]
@@ -158,7 +157,7 @@ class Cog(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         game = self.bot.games.get(message.channel.id)
-        if not game or not game.is_open:
+        if not game or not game.is_open or message.author.id not in game.members.values():
             return 
         result = game.play(message.author.id, message.content)
         await message.channel.send(result)
