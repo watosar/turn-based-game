@@ -85,4 +85,8 @@ class GameManager:
         
     def end(self):
         return self.game.end(self._turn_manager)
-
+    
+    @property
+    def is_started(self):
+        return self._turn_manager.is_started
+        

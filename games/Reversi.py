@@ -75,6 +75,9 @@ class Reversi:
         self.is_end = True
         
     def play(self, turn_manager, action):
+        if self.is_end:
+            raise ValueError('game is ended')
+            
         coord = comvert_code_to_cood(action)
         res = self._do_reversi(coord)
         if not res:
@@ -116,5 +119,5 @@ class Cog(commands.Cog):
         
     @commands.command()
     async def reversi(self, ctx, members: commands.Greedy[discord.Member]):
-        await self.bot._init_game(Reversi(), members)
+        await self.bot._init_game(ctx, Reversi(), members)
 
